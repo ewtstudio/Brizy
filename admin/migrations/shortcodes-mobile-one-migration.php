@@ -50,7 +50,8 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 		if ( isset( $old_meta_arr['brizy-post']['editor_data'] ) ) {
 			$old_json = json_decode( base64_decode( $old_meta_arr['brizy-post']['editor_data'] ), true );
 
-			$debug = false;
+			$debug = true;
+			//$debug = false;
 			if ( $debug ) {
 				// write in before.json to track the changes
 				$result_old = file_put_contents('1-before.json', json_encode(
@@ -59,12 +60,12 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 				));
 				echo 'put-contents-before-json=='.$result_old.'<br>';
 			}
-			
+
+			// todo: need here to inspect if is allow inline function in PHP 5.4
 			$new_arr = $this->array_walk_recursive_and_delete($old_json, function ($value, $key) {
 				if ( is_array($value) ) {
 					return empty($value);
 				}
-				//return ($value === null);
 
 				if ( isset($value['type']) && isset($value['value']) ) {
 					// if is shortcode return true
@@ -80,13 +81,17 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 				));
 				echo 'put-contents-before-json=='.$result_new.'<br>';
 			}
-
-			/*echo '<pre>';
-			print_r($old_json);
-			echo '</pre>';*/
 		}
 
 		return $new_meta;
+	}
+
+	public function parse_shortcodes(array &$array) {
+		// Line
+		$array = $this->unset_mobile_key( $array, "Line", "mobileWidth" );
+		$array = $this->unset_mobile_key( $array, "Line", "mobileBorderWidth" );
+
+		return $array;
 	}
 
 }
