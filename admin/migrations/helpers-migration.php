@@ -23,10 +23,11 @@ trait Brizy_Admin_Migrations_HelpersMigration {
 	}
 
 	public function unset_mobile_key(array &$array, $shortcode = "", $mobile_key = "") {
-		if ( empty($shortcode) && empty($key) ) {
+		if ( empty($shortcode) && empty($mobile_key) ) {
 			return $array;
 		}
 
+		//echo $array['type'].'<br>';
 		if ( $shortcode == $array['type'] ) {
 			/*echo '<pre>';
 			echo 'before';
