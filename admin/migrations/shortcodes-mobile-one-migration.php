@@ -18,30 +18,25 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 	 */
 	public function execute() {
 		$result = $this->get_posts_and_meta();
-		/*echo '<pre>';
-		print_r($result);
-		echo '</pre>';*/
 
 		// parse each post
 		foreach ( $result as $item ) {
 			$instance = Brizy_Editor_Storage_Post::instance($item->ID);
-			try {
-				$data = $instance->get_storage();
-				$data2 = $instance->get('editor_data', false);
-				echo '<pre>';
-				var_dump($data2);
-				print_r($data);
-				echo '<br>postttttt=='.$item->ID.'<br><br><br><br>';
-				echo '</pre>';
-			}
-			catch (Exception $e) {
-				print_r($e);
-				continue;
-			}
-			
+			$old_meta = $instance->get(Brizy_Editor_Post::BRIZY_POST, false);
 
+			if ( is_array($old_meta) ) {
+				$json_value = base64_decode($old_meta['editor_data']);
+			}
+			else {
+				// this method works only in this function
+				$json_value = $old_meta->get_editor_data();
+			}
+
+			// test only for specific post id
 			//if ( 153 == $item->ID ) {
-				//$new_meta = $this->migrate_post($item->meta_value, $item->ID); // $item->ID only for test with json
+				if( !is_null($json_value) ) {
+					$new_meta = $this->migrate_post($json_value, $item->ID); // $item->ID only for test with json
+				}
 			//}
 		}
 		die();
@@ -66,59 +61,45 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 	/**
 	 * Migrate post
 	 */
-	public function migrate_post($old_meta, $post_id) {
-		$new_meta     = $old_meta;
-		$old_meta_arr = unserialize($old_meta);
-		echo '<pre>';
-		print_r($old_meta_arr);
-		//echo '<br>final_post=='.$post_id.'<br><br><br><br>';
-		echo '</pre>';
-		if ( isset( $old_meta_arr['brizy-post']['editor_data'] ) ) {
-			$old_json = json_decode( base64_decode( $old_meta_arr['brizy-post']['editor_data'] ), true );
-			echo '<pre>';
-			//var_dump( json_decode( base64_decode( html_entity_decode( $old_meta_arr['brizy-post']['editor_data'] ) , true) ) );
-			//var_dump($old_json);
-			echo '</pre>';
+	public function migrate_post($json_value, $post_id) {
+		$new_json = $json_value;
+		$old_arr  = json_decode($json_value, true);
 
-			if( !is_array($old_json) ) {
-				return $old_meta;
-			}
-			$debug = true;
-			$debug = false;
-			if ( $debug ) {
-				// write in before.json to track the changes
-				$result_old = file_put_contents($post_id.'-before.json', json_encode(
-					$old_json,
-					JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT
-				));
-				echo 'put-contents-before-json=='.$result_old.'<br>';
-			}
-
-
-			// todo: need here to inspect if is allow inline function in PHP 5.4
-			$new_arr = $this->array_walk_recursive_and_delete($old_json, function ($value, $key) {
-				if ( is_array($value) ) {
-					return empty($value);
-				}
-
-				if ( isset($value['type']) && isset($value['value']) ) {
-					// if is shortcode return true
-					return true;
-				}
-			});
-
-
-			if ( $debug ) {
-				// write in before.json to track the changes
-				$result_new = file_put_contents($post_id.'-after.json', json_encode(
-					$new_arr,
-					JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT
-				));
-				echo 'put-contents-before-json=='.$result_new.'<br>';
-			}
+		//$debug = true;
+		$debug = false;
+		if ( $debug ) {
+			// write in before.json to track the changes
+			$result_old = file_put_contents($post_id.'-before.json', json_encode(
+				$old_arr,
+				JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT
+			));
+			echo 'put-contents-before-json=='.$result_old.'<br>';
 		}
 
-		return $new_meta;
+
+		// todo: need here to inspect if is allow inline function in PHP 5.4
+		$new_arr = $this->array_walk_recursive_and_delete($old_arr, function ($value, $key) {
+			if ( is_array($value) ) {
+				return empty($value);
+			}
+
+			if ( isset($value['type']) && isset($value['value']) ) {
+				// if is shortcode return true
+				return true;
+			}
+		});
+
+
+		if ( $debug ) {
+			// write in before.json to track the changes
+			$result_new = file_put_contents($post_id.'-after.json', json_encode(
+				$new_arr,
+				JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT
+			));
+			echo 'put-contents-before-json=='.$result_new.'<br>';
+		}
+
+		return $new_json;
 	}
 
 	/**
