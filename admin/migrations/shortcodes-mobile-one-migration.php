@@ -2,7 +2,7 @@
 
 class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin_Migrations_MigrationInterface {
 
-	use Brizy_Admin_Migrations_HelpersMigration;
+	use Brizy_Admin_Migrations_HelpersTrait;
 
 	/**
 	 * Return the version
@@ -24,9 +24,25 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 
 		// parse each post
 		foreach ( $result as $item ) {
-			if ( 153 == $item->ID ) {
-				$new_meta = $this->migrate_post($item->meta_value);
+			$instance = Brizy_Editor_Storage_Post::instance($item->ID);
+			try {
+				$data = $instance->get_storage();
+				$data2 = $instance->get('editor_data', false);
+				echo '<pre>';
+				var_dump($data2);
+				print_r($data);
+				echo '<br>postttttt=='.$item->ID.'<br><br><br><br>';
+				echo '</pre>';
 			}
+			catch (Exception $e) {
+				print_r($e);
+				continue;
+			}
+			
+
+			//if ( 153 == $item->ID ) {
+				//$new_meta = $this->migrate_post($item->meta_value, $item->ID); // $item->ID only for test with json
+			//}
 		}
 		die();
 	}
@@ -43,23 +59,35 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 			LEFT JOIN {$wpdb->posts} p ON p.ID = pm.post_id
 			WHERE pm.meta_key = 'brizy'
 			AND p.post_type != 'revision'
+			AND p.post_type != 'attachment'
 		");
 	}
 
 	/**
 	 * Migrate post
 	 */
-	public function migrate_post($old_meta) {
+	public function migrate_post($old_meta, $post_id) {
 		$new_meta     = $old_meta;
 		$old_meta_arr = unserialize($old_meta);
+		echo '<pre>';
+		print_r($old_meta_arr);
+		//echo '<br>final_post=='.$post_id.'<br><br><br><br>';
+		echo '</pre>';
 		if ( isset( $old_meta_arr['brizy-post']['editor_data'] ) ) {
 			$old_json = json_decode( base64_decode( $old_meta_arr['brizy-post']['editor_data'] ), true );
+			echo '<pre>';
+			//var_dump( json_decode( base64_decode( html_entity_decode( $old_meta_arr['brizy-post']['editor_data'] ) , true) ) );
+			//var_dump($old_json);
+			echo '</pre>';
 
+			if( !is_array($old_json) ) {
+				return $old_meta;
+			}
 			$debug = true;
-			//$debug = false;
+			$debug = false;
 			if ( $debug ) {
 				// write in before.json to track the changes
-				$result_old = file_put_contents('1-before.json', json_encode(
+				$result_old = file_put_contents($post_id.'-before.json', json_encode(
 					$old_json,
 					JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT
 				));
@@ -82,7 +110,7 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 
 			if ( $debug ) {
 				// write in before.json to track the changes
-				$result_new = file_put_contents('2-after.json', json_encode(
+				$result_new = file_put_contents($post_id.'-after.json', json_encode(
 					$new_arr,
 					JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT
 				));
@@ -98,7 +126,7 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 	 */
 	public function parse_shortcodes(array &$array) {
 		// Line
-		/*$array = $this->unset_mobile_key( $array, "Line", "mobileWidth" );
+		$array = $this->unset_mobile_key( $array, "Line", "mobileWidth" );
 		$array = $this->unset_mobile_key( $array, "Line", "mobileBorderWidth" );
 
 		// Spacer
@@ -149,7 +177,7 @@ class Brizy_Admin_Migrations_ShortcodesMobileOneMigration implements Brizy_Admin
 		$array = $this->unset_mobile_key( $array, "WOOProductPage", "mobileWidth" );
 
 		// WPNavigation
-		$array = $this->unset_mobile_key( $array, "WPNavigation", "mobileItemPadding" );*/
+		$array = $this->unset_mobile_key( $array, "WPNavigation", "mobileItemPadding" );
 
 		// need to finish Column
 		/*$array = $this->unset_mobile_key( $array, "Column", "mobileBgImageWidth" );

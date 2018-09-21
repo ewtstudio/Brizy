@@ -1,6 +1,6 @@
 <?php
 
-trait Brizy_Admin_Migrations_HelpersMigration {
+trait Brizy_Admin_Migrations_HelpersTrait {
 
 	public function array_walk_recursive_and_delete(array &$array, callable $callback, $userdata = null) {
 		foreach ($array as $key => &$value) {
@@ -29,10 +29,6 @@ trait Brizy_Admin_Migrations_HelpersMigration {
 
 		//echo $array['type'].'<br>';
 		if ( $shortcode == $array['type'] ) {
-			/*echo '<pre>';
-			echo 'before';
-			print_r($array);
-			echo '</pre>';*/
 			// replace "mobile" with empty string then make first letter lowercase
 			$key = lcfirst( str_replace("mobile", "", $mobile_key) );
 			if ( isset( $array['value'][$key] )
@@ -41,10 +37,6 @@ trait Brizy_Admin_Migrations_HelpersMigration {
 			{
 				unset( $array['value'][$mobile_key] );
 			}
-			/*echo '<pre>';
-			echo 'after';
-			print_r($array);
-			echo '</pre>';*/
 		}
 
 		return $array;
